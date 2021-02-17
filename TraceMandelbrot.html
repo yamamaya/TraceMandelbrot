@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+
+    <canvas id="canvas1" width="800" height="800" style="background: #000000;"></canvas>
+
+    <p id="link_place"></p>
+
+    <script>
+
+        var canvas = document.getElementById("canvas1");
+        var ctx = canvas.getContext("2d");
+
+        canvas.addEventListener('mousemove', onMouseMove, false);
+
+        var width = canvas.width;
+        var height = canvas.height
+
+        var x0 = -1.5;
+        var y0 = -1.0;
+        var rangeX = 2.0;
+        var rangeY = 2.0;
+        var stepX = rangeX / width;
+        var stepY = rangeY / height;
+
+        var maxN = 300;
+
+        var img = ctx.createImageData(width, height);
+
+        draw();
+
+        function iteratePixel(pr, pi, maxN, list) {
+            var n = 0;
+            var vr = 0;
+            var vi = 0;
+            if (list) {
+                list.push([vr, vi]);
+            }
+            do {
+                var tr = (vr * vr) - (vi * vi) + pr;
+                var ti = (vr * vi * 2.0) + pi;
+                vr = tr;
+                vi = ti;
+                if (list) {
+                    list.push([vr, vi]);
+                }
+                n++;
+            } while ((((vr * vr) + (vi * vi)) < 4 && n < maxN));
+            return n;
+        }
+
+        function draw() {
+            for (var y = 0; y < height; y++) {
+                for (var x = 0; x < width; x++) {
+                    var pr = x0 + stepX * x;
+                    var pi = y0 + stepY * y;
+
+                    var n = iteratePixel(pr, pi, maxN, null);
+                    var index = x * 4 + y * width * 4;
+                    if (n == maxN) {
+                        img.data[index] = 0;
+                        img.data[index + 1] = 0;
+                        img.data[index + 2] = 0;
+                    } else {
+                        img.data[index] = n * 5;
+                        img.data[index + 1] = n * 5;
+                        img.data[index + 2] = n * 20;
+                    }
+                    img.data[index + 3] = 255;
+                }
+            }
+
+            ctx.putImageData(img, 0, 0);
+        }
+
+        function onMouseMove(e) {
+            var rect = e.target.getBoundingClientRect();
+            var x = e.clientX - rect.left;
+            var y = e.clientY - rect.top;
+
+            var pr = x0 + (stepX * x);
+            var pi = y0 + (stepY * y);
+
+            var ptrList = new Array();
+            var n = iteratePixel(pr, pi, maxN, ptrList);
+
+            ctx.putImageData(img, 0, 0);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "deeppink";
+            ctx.beginPath();
+            for (var i = 0; i < ptrList.length; i++) {
+                var xx = (ptrList[i][0] - x0) / stepX;
+                var yy = (ptrList[i][1] - y0) / stepY;
+                if (i == 0) {
+                    ctx.moveTo(xx, yy);
+                } else {
+                    ctx.lineTo(xx, yy);
+                }
+            }
+            ctx.stroke();
+        }
+
+    </script>
+
+</body>
+</html>
